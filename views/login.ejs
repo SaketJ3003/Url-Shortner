@@ -12,7 +12,8 @@
 </head>
 <body>
     <h1>Login</h1>
-    <form action="/user/login" method="post">
+    <p id="error" style="color: red;"></p>
+    <form id="login-form" action="/user/login" method="post">
         <label>Email</label>
         <input type="text" required name="email">
         <label>Password</label>
@@ -20,5 +21,38 @@
 
         <button type="submit">Submit</button>
     </form>
+
+    <script>
+        const loginForm = document.getElementById("login-form");
+        const errorElement = document.getElementById("error");
+
+        loginForm.addEventListener("submit", async (event) => {
+            event.preventDefault();
+
+            const formData = new FormData(loginForm);
+            const payload = {
+                email: formData.get("email"),
+                password: formData.get("password"),
+            };
+
+            const response = await fetch("/user/login", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(payload),
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                errorElement.textContent = result.error || "Login failed";
+                return;
+            }
+
+            localStorage.setItem("token", result.token);
+            window.location.href = "/?token=" + encodeURIComponent(result.token);
+        });
+    </script>
 </body>
 </html>

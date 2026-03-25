@@ -1,6 +1,5 @@
 const express = require("express");
 const path = require("path")
-const cookieParser = require("cookie-parser");
 const { connectToMongoDB } = require("./connect");
 const {checkForAuthentication,restrictTo} = require("./middlewares/auth");
 
@@ -20,13 +19,7 @@ app.set('views', path.resolve("./views"));
  
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
 app.use(checkForAuthentication);
-
-
-app.use("/url", restrictTo(["NORMAL"]), urlRoute);
-app.use("/user", userRoute);
-app.use('/' ,staticRoute);
 
 app.get('/url/:shortId', async (req, res)=>{
     const shortId = req.params.shortId;
@@ -42,8 +35,17 @@ app.get('/url/:shortId', async (req, res)=>{
             },
         }
     );
+
+    if (!entry) {
+        return res.status(404).send("Short URL not found");
+    }
+
     res.redirect(entry.redirectURL)
 })
+
+app.use("/url", restrictTo(["NORMAL","ADMIN"]), urlRoute);
+app.use("/user", userRoute);
+app.use('/' ,staticRoute);
 
 app.listen(PORT, () => {
     console.log(`Server Started at PORT: ${PORT}`);

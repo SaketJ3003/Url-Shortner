@@ -11,51 +11,142 @@
 </head>
 <body>
     <h1>URL Shortener</h1>
-    <% if (locals.id) { %>
-     <p>URL Generated: http://localhost:8001/url/<%= id %></p>
-    <% } %>
+    <button id="admin-btn" type="button">Admin URLs</button>
+    <button id="logout-btn" type="button">Logout</button>
+    <p id="generated-url"></p>
     <div>
-        <form method="post" action="/url">
-            <input type="hidden" id="token" name="token">
+        <form id="shorten-form">
             <label>Enter Your Original URL</label>
-            <input type="text" name="url" placeholder="https://example.com">
+            <input id="url-input" type="text" name="url" placeholder="https://example.com" required>
             <button type="submit">Generate</button>
         </form>
     </div>
     <div>
-        <% if (locals.urls) { %>
-            <table>
-                <thead>
-                    <th>S.No</th>
-                    <th>ShortId</th>
-                    <th>Redirect</th>
-                    <th>Click</th>
-                    <th>Created At</th>
-                </thead>
-                <tbody>
-                    <% urls.forEach((url, index) => { %>
-                        <tr>    
-                            <td><%= index + 1 %></td>
-                            <td><%= url.shortId %></td>
-                            <td><%= url.redirectURL %></td>
-                            <td><%= url.visitHistory.length %></td>
-                            <td>
-                                <%= new Date(url.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) %> -
-                                <%= new Date(url.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }) %>
-                            </td>
-                        </tr>
-                    <% }) %>
-                </tbody>
-            </table>
-        <% } %>
+        <table>
+            <thead>
+                <th>S.No</th>
+                <th>ShortId</th>
+                <th>Redirect</th>
+                <th>Click</th>
+                <th>Created At</th>
+            </thead>
+            <tbody id="urls-body"></tbody>
+        </table>
     </div>
     <script>
-        const tokenInput = document.getElementById("token");
         const token = localStorage.getItem("token");
+        const urlsBody = document.getElementById("urls-body");
+        const generatedUrl = document.getElementById("generated-url");
+        const shortenForm = document.getElementById("shorten-form");
+        const urlInput = document.getElementById("url-input");
+        const adminBtn = document.getElementById("admin-btn");
+        const logoutBtn = document.getElementById("logout-btn");
 
-        if (tokenInput && token) {
-            tokenInput.value = token;
+        if (!token) {
+            window.location.href = "/login";
         }
+
+        function getRoleFromToken(jwtToken) {
+            try {
+                const payload = jwtToken.split(".")[1];
+                if (!payload) return null;
+                const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+                const decoded = atob(normalized);
+                const parsed = JSON.parse(decoded);
+                return parsed.role || null;
+            } catch (error) {
+                return null;
+            }
+        }
+
+        const role = getRoleFromToken(token);
+        adminBtn.style.display = role === "ADMIN" ? "inline-block" : "none";
+
+        logoutBtn.addEventListener("click", () => {
+            localStorage.removeItem("token");
+            window.location.href = "/login";
+        });
+
+        adminBtn.addEventListener("click", () => {
+            window.location.href = "/admin/urls";
+        });
+
+        function formatDate(dateValue) {
+            // console.log(dateValue);
+            const date = new Date(dateValue);
+            // console.log(date);
+            const day = date.toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+            });
+            const time = date.toLocaleTimeString("en-US", {
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: true,
+            });
+            return `${day} - ${time}`;
+        }
+
+        function renderUrls(urls) {
+            // console.log(urls)
+            urlsBody.innerHTML = "";
+            urls.forEach((url, index) => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${url.shortId}</td>
+                    <td>${url.redirectURL}</td>
+                    <td>${url.visitHistory.length}</td>
+                    <td>${formatDate(url.createdAt)}</td>
+                `;
+                urlsBody.appendChild(row);
+            });
+        }
+
+        async function loadUrls() {
+            const response = await fetch("/url", {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            if (!response.ok) {
+                localStorage.removeItem("token");
+                window.location.href = "/login";
+                return;
+            }
+
+            const data = await response.json();
+            renderUrls(data.urls || []);
+        }
+
+        shortenForm.addEventListener("submit", async (event) => {
+            event.preventDefault();
+
+            const response = await fetch("/url", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    url: urlInput.value,
+                }),
+            });
+
+            const result = await response.json();
+            if (!response.ok) {
+                generatedUrl.textContent = result.error || "Unable to generate short URL";
+                return;
+            }
+
+            generatedUrl.textContent = `URL Generated: http://localhost:8001/url/${result.id}`;
+            urlInput.value = "";
+            await loadUrls();
+        });
+
+        loadUrls();
     </script>
 </body>
 </html>

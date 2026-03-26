@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+    </style>
+    <meta charset="UTF-8">
+    <title>Admin URLs</title>
+</head>
+<body>
+    <h1>Admin - All URLs</h1>
+    <button id="home-btn" type="button">Home</button>
+    <button id="logout-btn" type="button">Logout</button>
+    <p id="status"></p>
+
+    <table>
+        <thead>
+            <th>S.No</th>
+            <th>ShortId</th>
+            <th>Redirect</th>
+            <th>Click</th>
+            <th>Created At</th>
+        </thead>
+        <tbody id="urls-body"></tbody>
+    </table>
+
+    <script>
+        const token = localStorage.getItem("token");
+        const urlsBody = document.getElementById("urls-body");
+        const statusText = document.getElementById("status");
+        const homeBtn = document.getElementById("home-btn");
+        const logoutBtn = document.getElementById("logout-btn");
+
+        if (!token) {
+            window.location.href = "/login";
+        }
+
+        homeBtn.addEventListener("click", () => {
+            window.location.href = "/";
+        });
+
+        logoutBtn.addEventListener("click", () => {
+            localStorage.removeItem("token");
+            window.location.href = "/login";
+        });
+
+        function formatDate(dateValue) {
+            const date = new Date(dateValue);
+            const day = date.toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+            });
+            const time = date.toLocaleTimeString("en-US", {
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: true,
+            });
+            return `${day} - ${time}`;
+        }
+
+        function renderUrls(urls) {
+            urlsBody.innerHTML = "";
+            urls.forEach((url, index) => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${url.shortId}</td>
+                    <td>${url.redirectURL}</td>
+                    <td>${url.visitHistory.length}</td>
+                    <td>${formatDate(url.createdAt)}</td>
+                `;
+                urlsBody.appendChild(row);
+            });
+        }
+
+        async function loadAdminUrls() {
+            const response = await fetch("/url/admin/urls", {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            if (response.status === 401 || response.status === 403) {
+                statusText.textContent = "You do not have admin access.";
+                return;
+            }
+
+            if (!response.ok) {
+                statusText.textContent = "Unable to load admin data.";
+                return;
+            }
+
+            const data = await response.json();
+            renderUrls(data.urls || []);
+        }
+
+        loadAdminUrls();
+    </script>
+</body>
+</html>

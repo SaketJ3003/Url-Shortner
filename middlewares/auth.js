@@ -2,13 +2,14 @@ const { getUser } = require("../service/auth")
 
 function checkForAuthentication(req,res,next){
     const authHeader = req.headers?.authorization;
-    const headerToken = authHeader && authHeader.startsWith("Bearer ")
-        ? authHeader.slice(7)
-        : null;
-    const queryToken = req.query?.token;
-    const bodyToken = req.body?.token;
-    const token = headerToken || queryToken || bodyToken;
+    // console.log("authHeader:",authHeader)
+    const bearerMatch = authHeader && authHeader.match(/^Bearer\s+(.+)$/i);
+    // console.log("bearer Mathc:",bearerMatch)
+    const headerToken = bearerMatch ? bearerMatch[1] : null;
+    const token = headerToken;
 
+    // console.log('token:',token);
+    
     req.user = null;
     if(!token){
         return next();
@@ -16,6 +17,9 @@ function checkForAuthentication(req,res,next){
     const user = getUser(token);
 
     req.user = user;
+
+    // console.log("User:",req.user);
+
     return next();
 }
 
@@ -24,7 +28,7 @@ function restrictTo(roles = []) {
     return function(req,res,next){
         if(!req.user) return res.redirect("/login");
 
-        if(!roles.includes(req.user.role)) return res.end('Unauthorised');
+        if(!roles.includes(req.user.role)) return res.status(403).send('Unauthorized');
 
         return next();
     };

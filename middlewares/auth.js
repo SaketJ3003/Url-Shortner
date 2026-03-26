@@ -2,9 +2,8 @@ const { getUser } = require("../service/auth")
 
 function checkForAuthentication(req,res,next){
     const authHeader = req.headers?.authorization;
-    // console.log("authHeader:",authHeader)
-    const bearerMatch = authHeader && authHeader.match(/^Bearer\s+(.+)$/i);
-    // console.log("bearer Mathc:",bearerMatch)
+    const bearerMatch = authHeader && authHeader.split('Bearer ')
+    // console.log("bearer Mathc:",bearerMatch);
     const headerToken = bearerMatch ? bearerMatch[1] : null;
     const token = headerToken;
 

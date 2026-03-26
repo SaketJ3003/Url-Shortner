@@ -14,10 +14,11 @@
     <button id="admin-btn" type="button">Admin URLs</button>
     <button id="logout-btn" type="button">Logout</button>
     <p id="generated-url"></p>
+    <p id="error" style="color: red;"></p>
     <div>
         <form id="shorten-form">
             <label>Enter Your Original URL</label>
-            <input id="url-input" type="text" name="url" placeholder="https://example.com" required>
+            <input id="url-input" type="text" name="url" placeholder="https://example.com">
             <button type="submit">Generate</button>
         </form>
     </div>
@@ -41,6 +42,7 @@
         const urlInput = document.getElementById("url-input");
         const adminBtn = document.getElementById("admin-btn");
         const logoutBtn = document.getElementById("logout-btn");
+        const errorElement = document.getElementById("error");
 
         if (!token) {
             window.location.href = "/login";
@@ -137,7 +139,13 @@
 
             const result = await response.json();
             if (!response.ok) {
-                generatedUrl.textContent = result.error || "Unable to generate short URL";
+                errorElement.textContent = await result.error || "Unable to generate short URL";
+
+                setTimeout(async () => {
+                    errorElement.textContent = ""; 
+                }, 3000);
+                
+                // generatedUrl.textContent = result.error || "Unable to generate short URL";
                 return;
             }
 

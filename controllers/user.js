@@ -13,7 +13,13 @@ async function handleUserSignup(req, res) {
 
 async function handleUserLogin(req, res) {
     const { email, password } = req.body;
-    const user = await User.findOne({ email, password });
+    if(!email || !password) {
+        return res.status(400).json({
+            error: "Email and Password are required",
+        });
+    }
+    const user = await User.matchPassword(email,password);
+    // console.log(user);
     if(!user) {
         return res.status(401).json({
             error: "Invalid Username or Password",

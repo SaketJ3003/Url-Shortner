@@ -15,9 +15,9 @@
     <p id="error" style="color: red;"></p>
     <form id="login-form" action="/user/login" method="post">
         <label>Email</label>
-        <input type="text" required name="email">
+        <input type="text" name="email">
         <label>Password</label>
-        <input type="password" required name="password">
+        <input type="password"  name="password">
 
         <button type="submit">Submit</button>
     </form>
@@ -47,6 +47,9 @@
 
             if (!response.ok) {
                 errorElement.textContent = result.error || "Login failed";
+                setTimeoutsetTimeout(async () => {
+                    errorElement.textContent = ""; 
+                }, 3000);
                 return;
             }
 

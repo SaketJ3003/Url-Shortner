@@ -63,48 +63,192 @@
             border: 1px solid #ddd;
             border-radius: 5px;
             box-sizing: border-box; 
-        }   
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        input.error-input,
+        select.error-input {
+            border: 2px solid #dc3545 !important;
+        }
+        .error-message {
+            color: #dc3545;
+            font-size: 13px;
+            margin-top: -15px;
+            margin-bottom: 15px;
+            display: none;
+        }
+        .error-message.show {
+            display: block;
+        }
     </style>
 </head>
 <body>
-    <form action="/user" method="post">
+    <form id="signup-form" action="/user" method="post">
         <h1>Sign Up</h1>
 
-        <label for="name">Full Name</label>
-        <input type="text" id="name" required name="name" placeholder="John Doe">
+        <div class="form-group">
+            <label for="name">Full Name</label>
+            <input type="text" id="name" name="name" placeholder="John Doe">
+            <div class="error-message" id="name-error"></div>
+        </div>
         
-        <label for="email">Email</label>
-        <input type="email" id="email" required name="email" placeholder="john@example.com">
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" placeholder="john@example.com">
+            <div class="error-message" id="email-error"></div>
+        </div>
 
-        <label for="state">State</label>
-        <select id="state" required name="state" class="state-select">
-            <option value="">Select a state</option>
-            <% states.forEach(state => { %>
-                <option value="<%= state._id %>"><%= state.name %></option>
-            <% }); %>
-        </select>
+        <div class="form-group">
+            <label for="state">State</label>
+            <select id="state" name="state" class="state-select">
+                <option value="">Select a state</option>
+                <% states.forEach(state => { %>
+                    <option value="<%= state._id %>"><%= state.name %></option>
+                <% }); %>
+            </select>
+            <div class="error-message" id="state-error"></div>
+        </div>
 
-        <label for="city">City</label>
-        <input type="text" id="city" required name="city" placeholder="New York">
+        <div class="form-group">
+            <label for="city">City</label>
+            <input type="text" id="city" name="city" placeholder="New York">
+            <div class="error-message" id="city-error"></div>
+        </div>
 
-        <label for="password">Password</label>
-        <input type="password" id="password" required name="password" placeholder="••••••••">
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" placeholder="••••••••">
+            <div class="error-message" id="password-error"></div>
+        </div>
 
-        <label for="confirm-password">Confirm Password</label>
-        <input type="password" id="confirm-password" required name="confirm-password" placeholder="••••••••">
+        <div class="form-group">
+            <label for="confirm-password">Confirm Password</label>
+            <input type="password" id="confirm-password" name="confirm-password" placeholder="••••••••">
+            <div class="error-message" id="confirm-password-error"></div>
+        </div>
 
         <button type="submit">Create Account</button>
     </form>
 
     <script>
-        const form = document.querySelector('form');
-        form.addEventListener('submit', function(event) {
-            const password = document.getElementById('password').value;
-            const confirmPassword = document.getElementById('confirm-password').value;
+        const form = document.getElementById('signup-form');
+        const nameInput = document.getElementById('name');
+        const emailInput = document.getElementById('email');
+        const stateInput = document.getElementById('state');
+        const cityInput = document.getElementById('city');
+        const passwordInput = document.getElementById('password');
+        const confirmPasswordInput = document.getElementById('confirm-password');
 
-            if (password !== confirmPassword) {
-                event.preventDefault();
-                alert('Passwords do not match. Please try again.');
+        function hasLeadingOrTrailingSpaces(value) {
+            return value !== value.trim();
+        }
+
+        
+        function validateField(input, errorElement, validationFn) {
+            const error = validationFn(input.value);
+            
+            if (error) {
+                input.classList.add('error-input');
+                errorElement.textContent = error;
+                errorElement.classList.add('show');
+                return false;
+            } else {
+                input.classList.remove('error-input');
+                errorElement.textContent = '';
+                errorElement.classList.remove('show');
+                return true;
+            }
+        }
+
+        const validations = {
+            name: (value) => {
+                if (!value) return 'Full name is required';
+                if (hasLeadingOrTrailingSpaces(value)) {
+                    return 'Full name cannot have leading or trailing spaces';
+                }
+                const namePattern = /^[a-zA-Z]+(?: [a-zA-Z]+)*$/;
+                if(!namePattern.test(value)) return 'Name can only contain alphabetic characters and single spaces'
+                return '';
+            },
+            email: (value) => {
+                if (!value) return 'Email is required';
+                if (hasLeadingOrTrailingSpaces(value)) {
+                    return 'Email cannot have leading or trailing spaces';
+                }
+                const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+                if (!emailPattern.test(value)) return 'Please enter a valid email';
+                return '';
+            },
+            state: (value) => {
+                if (!value) return 'State is required';
+                return '';
+            },
+            city: (value) => {
+                if (!value) return 'City is required';
+                if (hasLeadingOrTrailingSpaces(value)) {
+                    return 'City cannot have leading or trailing spaces';
+                }
+                const namePattern = /^[a-zA-Z]+(?: [a-zA-Z]+)*$/;
+                if(!namePattern.test(value)) return 'City Name can only contain alphabetic characters and single spaces'
+                return '';
+            },
+            password: (value) => {
+                if (!value) return 'Password is required';
+                if (hasLeadingOrTrailingSpaces(value)) {
+                    return 'Password cannot have leading or trailing spaces';
+                }
+                const passwordPattern = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[%_@-]).{8,}$/;
+                if (!passwordPattern.test(value)) return 'Password should be of 8 characters, at least 1 capital, 1 small, and numbers with special characters(%,_)';
+                return '';
+            },
+            confirmPassword: (value) => {
+                if (!value) return 'Please confirm your password';
+                if (value !== passwordInput.value) {
+                    return 'Passwords do not match';
+                }
+                return '';
+            }
+        };
+
+        nameInput.addEventListener('blur', () => {
+            validateField(nameInput, document.getElementById('name-error'), validations.name);
+        });
+
+        emailInput.addEventListener('blur', () => {
+            validateField(emailInput, document.getElementById('email-error'), validations.email);
+        });
+
+        stateInput.addEventListener('change', () => {
+            validateField(stateInput, document.getElementById('state-error'), validations.state);
+        });
+
+        cityInput.addEventListener('blur', () => {
+            validateField(cityInput, document.getElementById('city-error'), validations.city);
+        });
+
+        passwordInput.addEventListener('blur', () => {
+            validateField(passwordInput, document.getElementById('password-error'), validations.password);
+        });
+
+        confirmPasswordInput.addEventListener('blur', () => {
+            validateField(confirmPasswordInput, document.getElementById('confirm-password-error'), validations.confirmPassword);
+        });
+
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            let isValid = true;
+
+            isValid &= validateField(nameInput, document.getElementById('name-error'), validations.name);
+            isValid &= validateField(emailInput, document.getElementById('email-error'), validations.email);
+            isValid &= validateField(stateInput, document.getElementById('state-error'), validations.state);
+            isValid &= validateField(cityInput, document.getElementById('city-error'), validations.city);
+            isValid &= validateField(passwordInput, document.getElementById('password-error'), validations.password);
+            isValid &= validateField(confirmPasswordInput, document.getElementById('confirm-password-error'), validations.confirmPassword);
+
+            if (isValid) {
+                form.submit();
             }
         });
     </script>

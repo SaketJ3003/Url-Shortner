@@ -106,6 +106,26 @@
         a:hover {
             text-decoration: underline;
         }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        input.error-input {
+            border: 2px solid #dc2626 !important;
+        }
+
+        .error-message {
+            color: #dc2626;
+            font-size: 0.8rem;
+            margin-top: 0.25rem;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -118,12 +138,14 @@
         <form id="login-form">
             <div class="form-group">
                 <label for="email">Email Address</label>
-                <input type="email" id="email" name="email" placeholder="you@example.com" >
+                <input type="text" id="email" name="email" placeholder="you@example.com" >
+                <div class="error-message" id="email-error"></div>
             </div>
             
             <div class="form-group">
                 <label for="password">Password</label>
                 <input type="password" id="password" name="password" placeholder="••••••••" >
+                <div class="error-message" id="password-error"></div>
             </div>
 
             <button type="submit">Sign In</button>
@@ -132,14 +154,72 @@
     </div>
 
     <script>
-        //delete existing token on login page load
         localStorage.removeItem("token");
 
         const loginForm = document.getElementById("login-form");
         const errorElement = document.getElementById("error");
+        const emailInput = document.getElementById("email");
+        const passwordInput = document.getElementById("password");
+
+        function hasLeadingOrTrailingSpaces(value) {
+            return value !== value.trim();
+        }
+
+        function validateField(input, errorElement, validationFn) {
+            const error = validationFn(input.value);
+            
+            if (error) {
+                input.classList.add('error-input');
+                errorElement.textContent = error;
+                errorElement.classList.add('show');
+                return false;
+            } else {
+                input.classList.remove('error-input');
+                errorElement.textContent = '';
+                errorElement.classList.remove('show');
+                return true;
+            }
+        }
+
+        const validations = {
+            email: (value) => {
+                if (!value) return 'Email is required';
+                if (hasLeadingOrTrailingSpaces(value)) {
+                    return 'Email cannot have leading or trailing spaces';
+                }
+                const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+                if (!emailPattern.test(value)) return 'Please enter a valid email';
+                return '';
+            },
+            password: (value) => {
+                if (!value) return 'Password is required';
+                if (hasLeadingOrTrailingSpaces(value)) {
+                    return 'Password cannot have leading or trailing spaces';
+                }
+                const passwordPattern = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[%_@-]).{8,}$/;
+                if (!passwordPattern.test(value)) return 'Password should be of 8 characters, at least 1 capital, 1 small, and numbers with special characters(%,_)';
+                return '';
+            }
+        };
+
+        emailInput.addEventListener('blur', () => {
+            validateField(emailInput, document.getElementById('email-error'), validations.email);
+        });
+
+        passwordInput.addEventListener('blur', () => {
+            validateField(passwordInput, document.getElementById('password-error'), validations.password);
+        });
 
         loginForm.addEventListener("submit", async (event) => {
             event.preventDefault();
+
+            let isValid = true;
+            isValid &= validateField(emailInput, document.getElementById('email-error'), validations.email);
+            isValid &= validateField(passwordInput, document.getElementById('password-error'), validations.password);
+
+            if (!isValid) {
+                return;
+            }
 
             const formData = new FormData(loginForm);
             const payload = {

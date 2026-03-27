@@ -89,9 +89,25 @@
 
         <label for="password">Password</label>
         <input type="password" id="password" required name="password" placeholder="••••••••">
-        
+
+        <label for="confirm-password">Confirm Password</label>
+        <input type="password" id="confirm-password" required name="confirm-password" placeholder="••••••••">
+
         <button type="submit">Create Account</button>
     </form>
+
+    <script>
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function(event) {
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+
+            if (password !== confirmPassword) {
+                event.preventDefault();
+                alert('Passwords do not match. Please try again.');
+            }
+        });
+    </script>
     
 </body>
 

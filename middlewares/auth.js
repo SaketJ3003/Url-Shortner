@@ -1,4 +1,4 @@
-const { getUser } = require("../service/auth")
+const { verifyToken } = require("../service/auth")
 
 function checkForAuthentication(req,res,next){
     const authHeader = req.headers?.authorization;
@@ -13,7 +13,7 @@ function checkForAuthentication(req,res,next){
     if(!token){
         return next();
     }
-    const user = getUser(token);
+    const user = verifyToken(token);
 
     req.user = user;
 

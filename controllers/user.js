@@ -1,5 +1,5 @@
 const User = require("../models/user");
-const { setUser, getUser } = require("../service/auth");
+const { verifyToken, genrateToken } = require("../service/auth");
 
 async function handleUserSignup(req, res) {
     const { name, email, password, state, city } = req.body;
@@ -21,15 +21,22 @@ async function handleUserLogin(req, res) {
             error: "Email and Password are required",
         });
     }
+    
+    if(!(await User.findOne({ email }))) {
+        return res.status(401).json({
+            error: "Email Not Found, Please Sign Up",
+        });
+    }
+
     const user = await User.matchPassword(email,password);
     // console.log(user);
     if(!user) {
         return res.status(401).json({
-            error: "Invalid Username or Password",
+            error: "Invalid Password",
         });
     }
 
-    const token = setUser(user);
+    const token = genrateToken(user);
     return res.status(200).json({ token });
 }
 

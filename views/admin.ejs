@@ -1,103 +1,219 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | URL Shortener</title>
     <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg: #f8fafc;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --white: #ffffff;
+            --border: #e2e8f0;
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            padding: 2rem;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            background: var(--white);
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1rem;
+        }
+
+        h1 { font-size: 1.5rem; margin: 0; color: var(--text-main); }
+
+        .btn-group { display: flex; gap: 0.5rem; }
+
+        button {
+            padding: 0.6rem 1rem;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid var(--border);
+            background: var(--white);
+        }
+
+        #home-btn { background: var(--primary); color: white; border: none; }
+        #home-btn:hover { background: var(--primary-hover); }
+        #logout-btn:hover { background: #fee2e2; color: #dc2626; border-color: #fecaca; }
+
+        .status-msg {
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            display: none;
+            font-size: 0.9rem;
+        }
+        .error { display: block; background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+
+        .table-container { overflow-x: auto; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.95rem;
+        }
+
+        th {
+            background: #f1f5f9;
+            padding: 1rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        tr:hover { background-color: #f8fafc; }
+
+        .badge {
+            background: #e0e7ff;
+            color: #4338ca;
+            padding: 0.2rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .url-link { color: var(--primary); text-decoration: none; }
+        .url-link:hover { text-decoration: underline; }
+
+        /* Loader */
+        .loader {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-muted);
         }
     </style>
-    <meta charset="UTF-8">
-    <title>Admin URLs</title>
 </head>
 <body>
-    <h1>Admin - All URLs</h1>
-    <button id="home-btn" type="button">Home</button>
-    <button id="logout-btn" type="button">Logout</button>
-    <p id="status"></p>
 
-    <table>
-        <thead>
-            <th>S.No</th>
-            <th>ShortId</th>
-            <th>Redirect</th>
-            <th>Click</th>
-            <th>Created At</th>
-        </thead>
-        <tbody id="urls-body"></tbody>
-    </table>
+<div class="container">
+    <header>
+        <h1>Admin Dashboard</h1>
+        <div class="btn-group">
+            <button id="home-btn">Home</button>
+            <button id="logout-btn">Logout</button>
+        </div>
+    </header>
 
-    <script>
-        const token = localStorage.getItem("token");
-        const urlsBody = document.getElementById("urls-body");
-        const statusText = document.getElementById("status");
-        const homeBtn = document.getElementById("home-btn");
-        const logoutBtn = document.getElementById("logout-btn");
+    <div id="status" class="status-msg"></div>
 
-        if (!token) {
-            window.location.href = "/login";
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>S.No</th>
+                    <th>Created By</th>
+                    <th>Short ID</th>
+                    <th>Destination</th>
+                    <th>Clicks</th>
+                    <th>Created At</th>
+                </tr>
+            </thead>
+            <tbody id="urls-body">
+                <tr><td colspan="5" class="loader">Loading analytics...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const token = localStorage.getItem("token");
+    const urlsBody = document.getElementById("urls-body");
+    const statusText = document.getElementById("status");
+
+    if (!token) window.location.href = "/login";
+
+    document.getElementById("home-btn").onclick = () => window.location.href = "/";
+    document.getElementById("logout-btn").onclick = () => {
+        localStorage.removeItem("token");
+        window.location.href = "/login";
+    };
+
+    function formatDate(dateValue) {
+        const date = new Date(dateValue);
+        return date.toLocaleDateString("en-GB", { 
+            day: '2-digit', month: 'short', year: 'numeric' 
+        }) + ' • ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function renderUrls(urls) {
+        if (urls.length === 0) {
+            urlsBody.innerHTML = '<tr><td colspan="5" style="text-align:center">No URLs found.</td></tr>';
+            return;
         }
-
-        homeBtn.addEventListener("click", () => {
-            window.location.href = "/";
+        urlsBody.innerHTML = "";
+        urls.forEach((url, index) => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${index + 1}</td>
+                <td>${url.username.split(' ')[0] || 'Unknown'}</td>
+                <td><strong><a class="url-link" href="http://localhost:8001/url/${url.shortId}" target="_blank">http://localhost:8001/url/${url.shortId}</a></strong></td>
+                <td><a class="url-link" href="${url.redirectURL}" target="_blank">${url.redirectURL}</a></td>
+                <td><span class="badge">${url.visitHistory.length}</span></td>
+                <td style="color: #64748b; font-size: 0.85rem">${formatDate(url.createdAt)}</td>
+            `;
+            urlsBody.appendChild(row);
         });
+    }
 
-        logoutBtn.addEventListener("click", () => {
-            localStorage.removeItem("token");
-            window.location.href = "/login";
-        });
-
-        function formatDate(dateValue) {
-            const date = new Date(dateValue);
-            const day = date.toLocaleDateString("en-US", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-            });
-            const time = date.toLocaleTimeString("en-US", {
-                hour: "2-digit",
-                minute: "2-digit",
-                hour12: true,
-            });
-            return `${day} - ${time}`;
-        }
-
-        function renderUrls(urls) {
-            urlsBody.innerHTML = "";
-            urls.forEach((url, index) => {
-                const row = document.createElement("tr");
-                row.innerHTML = `
-                    <td>${index + 1}</td>
-                    <td>${url.shortId}</td>
-                    <td>${url.redirectURL}</td>
-                    <td>${url.visitHistory.length}</td>
-                    <td>${formatDate(url.createdAt)}</td>
-                `;
-                urlsBody.appendChild(row);
-            });
-        }
-
-        async function loadAdminUrls() {
+    async function loadAdminUrls() {
+        try {
             const response = await fetch("/url/admin/urls", {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
+                headers: { Authorization: `Bearer ${token}` },
             });
 
             if (response.status === 401 || response.status === 403) {
-                statusText.textContent = "You do not have admin access.";
+                showError("Access Denied: Admin privileges required.");
                 return;
             }
-
-            if (!response.ok) {
-                statusText.textContent = "Unable to load admin data.";
-                return;
-            }
+            if (!response.ok) throw new Error();
 
             const data = await response.json();
             renderUrls(data.urls || []);
+        } catch (err) {
+            showError("Failed to connect to the server.");
         }
+    }
 
-        loadAdminUrls();
-    </script>
+    function showError(msg) {
+        statusText.textContent = msg;
+        statusText.classList.add('error');
+        urlsBody.innerHTML = '';
+    }
+
+    loadAdminUrls();
+</script>
 </body>
 </html>

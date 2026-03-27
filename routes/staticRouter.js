@@ -1,5 +1,5 @@
 const express = require("express");
-
+const State = require("../models/states");
 const router = express.Router();
 
 router.get('/admin/urls', async (req, res) => {
@@ -12,9 +12,10 @@ router.get('/', async (req, res) => {
     });
 })
 
-router.get('/signup', (req,res)=>{
-    return res.render("signup");
-})
+router.get('/signup', async (req, res) => {
+    const states = await State.find({ isActive: true });
+    return res.render("signup", { states });
+});
 
 router.get('/login', (req,res)=>{
     return res.render("login");

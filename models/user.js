@@ -1,5 +1,4 @@
 const { createHmac, randomBytes } = require("crypto");
-const { create } = require("domain");
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
@@ -17,13 +16,26 @@ const userSchema = new mongoose.Schema({
         required: true,
         default: "NORMAL",
     },
+    stateId:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'State',
+        required: true,
+    },
+    city:{
+        type: String,
+        required: true,
+    },
     salt:{
         type: String,
     },
     password:{
         type: String,
         required: true,
-    }
+    },
+    isActive:{
+        type: Boolean,
+        default: true,
+    },
 }, { timestamps: true }); 
 
 userSchema.pre('save', function(next){

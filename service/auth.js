@@ -3,6 +3,7 @@ const secret  = "Saket$123@$";
 
 
 function setUser(user){
+    console.log("user", user);
     return jwt.sign({
         _id: user._id,
         email: user.email,

@@ -1,5 +1,6 @@
 const { nanoid } = require("nanoid");
 const URL = require('../models/urls');
+const User = require('../models/user');
 
 async function handleGenrateNewShortURL(req, res){
     const body = req.body;
@@ -12,6 +13,9 @@ async function handleGenrateNewShortURL(req, res){
             redirectURL: body.url,
         }
     );
+
+    const user = await User.findById(req.user._id);
+
     // console.log(urls.length);
     const urlRegex = /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)$/;
     if(!urlRegex.test(body.url)){
@@ -28,6 +32,7 @@ async function handleGenrateNewShortURL(req, res){
         redirectURL: body.url,
         visitHistory: [],
         createdBy: req.user._id,
+        username: user.name,
     });
     return res.status(201).json({ id: shortID });
 }

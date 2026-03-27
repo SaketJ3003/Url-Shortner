@@ -4,6 +4,7 @@ const { connectToMongoDB } = require("./connect");
 const {checkForAuthentication,restrictTo} = require("./middlewares/auth");
 
 const URL = require("./models/urls");
+const State = require("./models/states");
 
 const urlRoute = require('./routes/url');
 const staticRoute = require('./routes/staticRouter');
@@ -43,9 +44,16 @@ app.get('/url/:shortId', async (req, res)=>{
     res.redirect(entry.redirectURL)
 })
 
-app.use("/url", restrictTo(["NORMAL","ADMIN"]), urlRoute);
-app.use("/user", userRoute);
-app.use('/' ,staticRoute);
+app.post('/state', async (req, res) => {
+    const { name } = req.body;
+    const state = new State({ name });
+    await state.save();
+    res.status(201).json(state);
+});
+
+app.use("/url", restrictTo(["NORMAL","ADMIN"]), urlRoute);//handling url shortening and admin dashboard.
+app.use("/user", userRoute); //handling user signup and login
+app.use('/' ,staticRoute);//handling rendering of home page etc.
 
 app.listen(PORT, () => {
     console.log(`Server Started at PORT: ${PORT}`);

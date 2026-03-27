@@ -1,160 +1,284 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Shortener</title>
     <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --error: #ef4444;
+            --border: #e2e8f0;
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1rem;
+        }
+
+        h1 { margin: 0; font-size: 1.5rem; color: var(--primary); }
+
+        .btn-group { display: flex; gap: 0.5rem; }
+
+        button {
+            cursor: pointer;
+            padding: 0.6rem 1.2rem;
+            border-radius: 6px;
+            border: none;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        #admin-btn { background: #f1f5f9; color: var(--text-main); }
+        #logout-btn { background: #fee2e2; color: #991b1b; }
+        button[type="submit"] { background: var(--primary); color: white; }
+        button:hover { opacity: 0.9; transform: translateY(-1px); }
+
+        .form-section {
+            background: #f1f5f9;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        input {
+            flex: 1;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            outline: none;
+        }
+
+        input:focus { border-color: var(--primary); ring: 2px solid var(--primary); }
+
+        #generated-url {
+            margin-top: 1rem;
+            padding: 0.75rem;
+            background: #ecfdf5;
+            color: #065f46;
+            border-radius: 6px;
+            display: none;
+            font-weight: 500;
+        }
+
+        .table-container { overflow-x: auto; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+
+        th {
+            text-align: left;
+            background: #f8fafc;
+            padding: 1rem;
+            color: var(--text-muted);
+            border-bottom: 2px solid var(--border);
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        tr:hover { background: #fbfcfe; }
+
+        .badge {
+            background: var(--primary);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
         }
     </style>
-    <meta charset="UTF-8">
-    <title>Document</title>
 </head>
 <body>
-    <h1>URL Shortener</h1>
-    <button id="admin-btn" type="button">Admin URLs</button>
-    <button id="logout-btn" type="button">Logout</button>
-    <p id="generated-url"></p>
-    <p id="error" style="color: red;"></p>
-    <div>
+
+<div class="container">
+    <header>
+        <h1>URL Shortener</h1>
+        <div class="btn-group">
+            <button id="admin-btn" type="button">Admin Panel</button>
+            <button id="logout-btn" type="button">Logout</button>
+        </div>
+    </header>
+
+    <div class="form-section">
         <form id="shorten-form">
-            <label>Enter Your Original URL</label>
-            <input id="url-input" type="text" name="url" placeholder="https://example.com">
-            <button type="submit">Generate</button>
+            <label style="font-weight: 600;">Shorten a long URL</label>
+            <div class="input-group">
+                <input id="url-input" type="text" name="url" placeholder="https://example.com">
+                <button type="submit">Generate</button>
+            </div>
         </form>
+        <p id="generated-url"></p>
+        <p id="error" style="color: var(--error); font-size: 0.9rem; margin-top: 0.5rem;"></p>
     </div>
-    <div>
+
+    <div class="table-container">
         <table>
             <thead>
-                <th>S.No</th>
-                <th>ShortId</th>
-                <th>Redirect</th>
-                <th>Click</th>
-                <th>Created At</th>
+                <tr>
+                    <th>S.No</th>
+                    <th>Short ID</th>
+                    <th>Original URL</th>
+                    <th>Clicks</th>
+                    <th>Created At</th>
+                </tr>
             </thead>
             <tbody id="urls-body"></tbody>
         </table>
     </div>
-    <script>
-        const token = localStorage.getItem("token");
-        const urlsBody = document.getElementById("urls-body");
-        const generatedUrl = document.getElementById("generated-url");
-        const shortenForm = document.getElementById("shorten-form");
-        const urlInput = document.getElementById("url-input");
-        const adminBtn = document.getElementById("admin-btn");
-        const logoutBtn = document.getElementById("logout-btn");
-        const errorElement = document.getElementById("error");
+</div>
 
-        if (!token) {
-            window.location.href = "/login";
+<script>
+    const token = localStorage.getItem("token");
+    const urlsBody = document.getElementById("urls-body");
+    const generatedUrl = document.getElementById("generated-url");
+    const shortenForm = document.getElementById("shorten-form");
+    const urlInput = document.getElementById("url-input");
+    const adminBtn = document.getElementById("admin-btn");
+    const logoutBtn = document.getElementById("logout-btn");
+    const errorElement = document.getElementById("error");
+
+    if (!token) { window.location.href = "/login"; }
+
+    function getRoleFromToken(jwtToken) {
+        try {
+            const payload = jwtToken.split(".")[1];
+            const decoded = JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/")));
+            return decoded.role || null;
+        } catch (e) { 
+            return null; 
         }
+    }
 
-        function getRoleFromToken(jwtToken) {
-            try {
-                const payload = jwtToken.split(".")[1];
-                if (!payload) return null;
-                const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
-                const decoded = atob(normalized);
-                const parsed = JSON.parse(decoded);
-                return parsed.role || null;
-            } catch (error) {
-                return null;
-            }
+    const role = getRoleFromToken(token);
+    adminBtn.style.display = role === "ADMIN" ? "inline-block" : "none";
+
+    logoutBtn.addEventListener("click", () => {
+        localStorage.removeItem("token");
+        window.location.href = "/login";
+    });
+
+    adminBtn.addEventListener("click", () => {
+         window.location.href = "/admin/urls"; 
         }
+    );
 
-        const role = getRoleFromToken(token);
-        adminBtn.style.display = role === "ADMIN" ? "inline-block" : "none";
+    function formatDate(dateValue) {
+        const date = new Date(dateValue);
+        return date.toLocaleDateString("en-US", { 
+            month: "short",
+            day: "numeric"
+        }) + " - " + 
+        date.toLocaleTimeString("en-US", { 
+            hour: "2-digit", 
+            minute: "2-digit" 
+        });
+    }
 
-        logoutBtn.addEventListener("click", () => {
+    function renderUrls(urls) {
+        urlsBody.innerHTML = "";
+        urls.forEach((url, index) => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${index + 1}</td>
+                <td><code style="color:var(--primary)">${url.shortId}</code></td>
+                <td title="${url.redirectURL}">${url.redirectURL}</td>
+                <td><span class="badge">${url.visitHistory.length}</span></td>
+                <td style="color: var(--text-muted)">${formatDate(url.createdAt)}</td>
+            `;
+            urlsBody.appendChild(row);
+        });
+    }
+
+    async function loadUrls() {
+        const response = await fetch("/url", { 
+            headers: { 
+                Authorization: `Bearer ${token}` 
+            } 
+        });
+        if (!response.ok) { 
             localStorage.removeItem("token");
-            window.location.href = "/login";
+            window.location.href = "/login"; 
+            return; 
+        }
+        const data = await response.json();
+        renderUrls(data.urls || []);
+    }
+
+    shortenForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const response = await fetch("/url", {
+            method: "POST",
+            headers: { 
+                "Content-Type": "application/json", 
+                Authorization: `Bearer ${token}` 
+            },
+            body: JSON.stringify({ 
+                url: urlInput.value 
+            }),
         });
 
-        adminBtn.addEventListener("click", () => {
-            window.location.href = "/admin/urls";
-        });
+        const result = await response.json();
+        if (!response.ok) {
+            errorElement.textContent = await result.error || "Error generating URL";
 
-        function formatDate(dateValue) {
-            // console.log(dateValue);
-            const date = new Date(dateValue);
-            // console.log(date);
-            const day = date.toLocaleDateString("en-US", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-            });
-            const time = date.toLocaleTimeString("en-US", {
-                hour: "2-digit",
-                minute: "2-digit",
-                hour12: true,
-            });
-            return `${day} - ${time}`;
+            setTimeout(async () => {
+                errorElement.textContent = "";
+            }, 3000);
+
+            return;
         }
+        generatedUrl.style.display = "block";
+        generatedUrl.textContent = `Generated: http://localhost:8001/url/${result.id}`;
+        urlInput.value = "";
+        await loadUrls();
+    });
 
-        function renderUrls(urls) {
-            // console.log(urls)
-            urlsBody.innerHTML = "";
-            urls.forEach((url, index) => {
-                const row = document.createElement("tr");
-                row.innerHTML = `
-                    <td>${index + 1}</td>
-                    <td>${url.shortId}</td>
-                    <td>${url.redirectURL}</td>
-                    <td>${url.visitHistory.length}</td>
-                    <td>${formatDate(url.createdAt)}</td>
-                `;
-                urlsBody.appendChild(row);
-            });
-        }
-
-        async function loadUrls() {
-            const response = await fetch("/url", {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
-
-            if (!response.ok) {
-                localStorage.removeItem("token");
-                window.location.href = "/login";
-                return;
-            }
-
-            const data = await response.json();
-            renderUrls(data.urls || []);
-        }
-
-        shortenForm.addEventListener("submit", async (event) => {
-            event.preventDefault();
-
-            const response = await fetch("/url", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({
-                    url: urlInput.value,
-                }),
-            });
-
-            const result = await response.json();
-            if (!response.ok) {
-                errorElement.textContent = await result.error || "Unable to generate short URL";
-
-                setTimeout(async () => {
-                    errorElement.textContent = ""; 
-                }, 3000);
-                
-                // generatedUrl.textContent = result.error || "Unable to generate short URL";
-                return;
-            }
-
-            generatedUrl.textContent = `URL Generated: http://localhost:8001/url/${result.id}`;
-            urlInput.value = "";
-            await loadUrls();
-        });
-
-        loadUrls();
-    </script>
+    loadUrls();
+</script>
 </body>
 </html>

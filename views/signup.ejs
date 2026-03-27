@@ -1,26 +1,98 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-    </style>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Up</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        form {
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 350px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 25px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #666;
+            font-weight: 600;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box; 
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #007bff;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .state-select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box; 
+        }   
+    </style>
 </head>
 <body>
-    <h1>Sign Up</h1>
     <form action="/user" method="post">
-        <label>Full Name</label>
-        <input type="text" required name="name">
-        <label>Email</label>
-        <input type="text" required name="email">
-        <label>Password</label>
-        <input type="password" required name="password">
+        <h1>Sign Up</h1>
 
-        <button type="submit">Submit</button>
+        <label for="name">Full Name</label>
+        <input type="text" id="name" required name="name" placeholder="John Doe">
+        
+        <label for="email">Email</label>
+        <input type="email" id="email" required name="email" placeholder="john@example.com">
+
+        <label for="state">State</label>
+        <select id="state" required name="state" class="state-select">
+            <option value="">Select a state</option>
+            <% states.forEach(state => { %>
+                <option value="<%= state._id %>"><%= state.name %></option>
+            <% }); %>
+        </select>
+
+        <label for="city">City</label>
+        <input type="text" id="city" required name="city" placeholder="New York">
+
+        <label for="password">Password</label>
+        <input type="password" id="password" required name="password" placeholder="••••••••">
+        
+        <button type="submit">Create Account</button>
     </form>
+    
 </body>
+
 </html>
